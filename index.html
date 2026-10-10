@@ -361,7 +361,7 @@ body.codes footer[data-code]::after{top:3px}
         </article>
         <article class="yrs3" data-code="3a2 · Proyección por año de vida">
           <div class="hr1"><span class="lb" data-code="3a2a · Título">Proyección por año de vida</span><span class="chip" data-code="3a2b · Moneda">Pesos mexicanos (MXN)</span></div>
-          <div class="yh" data-code="3a2c · Encabezado de columnas"><span>Año</span><span></span><span>Crece</span><span>Comisión</span></div>
+          <div class="yh" data-code="3a2c · Encabezado de columnas"><span>Año</span><span></span><span>Crece</span><span>Ingreso</span></div>
           <div id="yrs" data-code="3a2d · Filas"></div>
         </article>
         <article class="kc" data-code="3a3a · Cifras clave">
@@ -409,7 +409,7 @@ import random
 import sys
 from dataclasses import dataclass, fields, replace
 
-VERSION = "beta1.0"
+VERSION = "beta1.1"
 LIMITE_BONO = (2027, 12)
 ESQUEMAS = ("A",)   # beta1.0: un solo esquema (10% de por vida)
 BONO_PCT = (1.0, 1.2, 1.4)   # beta1.0: bono 1.a, 2.a y 3.a caja (% de su primera factura)
@@ -1479,7 +1479,7 @@ def pruebas_v11():
 def pruebas_beta1_0():
     """beta1.0 - Reglas nuevas con los VALORES NUEVOS por defecto (fee 20%, $30). Cifras derivadas a mano:
     int. inversion mes 1 = 130,200 x 6.45% / 12 = 699.825; fee = 20% x 699.825 = 139.965; factura mes 1 = 8,139.965."""
-    assert version() == VERSION == "beta1.0"
+    assert version() == VERSION == "beta1.1"
     d = Empresa()
     assert d.f == 0.20 and d.P == 30.0 and RANGOS["P"][:2] == (20.0, 99.0) and ESQUEMAS == ("A",)
     f = simular(Empresa(nombre="Ejemplo"))
@@ -1644,7 +1644,7 @@ window.APOYA_MOTOR=(async function(){
   py.FS.writeFile("/home/pyodide/motor_beta1.py",document.getElementById("py_motor").textContent);
   py.FS.writeFile("/home/pyodide/puente.py",document.getElementById("py_puente").textContent);
   py.runPython("import sys;sys.path.insert(0,'/home/pyodide')\nimport motor_beta1 as _m\nimport puente as _p");
-  if(py.runPython("_m.version()")!=="beta1.0")throw new Error("Versión incompatible del motor");
+  if(py.runPython("_m.version()")!=="beta1.1")throw new Error("Versión incompatible del motor");
   return py.runPython("_p.calcular_front");
 })();
 </script>
@@ -1665,7 +1665,7 @@ function minInt(imp){return imp<=11?2.0:(imp<=13?2.5:3.0)}
 function fecha(c){return MES[c.m-1]+"-"+c.y}
 function toast(t){var el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},2600)}
 
-/* ---------- MOTOR beta1.0 (Python dentro del navegador) ----------
+/* ---------- MOTOR beta1.1 (Python dentro del navegador) ----------
    El front ya no calcula: envia la lista de empresas al puente y pinta lo que devuelve el motor. */
 var ENG=null;
 function calcula(){
@@ -1732,7 +1732,7 @@ function plRender(ER){
     h+='<span class="op '+c+'">'+r[0]+'</span><span class="lb2 '+c+'">'+r[1]+'</span>'+r[2].map(function(v){return '<span class="v '+c+'">'+plK(v)+'</span>'}).join("")+'<span class="v '+c+'" style="font-weight:700">'+t+'</span>';
   });
   $("pl").innerHTML=h;
-  $("plN").textContent="Cifras del motor beta1.0. La comisión (10%) va en el año de su factura y se paga un mes después; la caja con bono no cobra la comisión de su mes 1. El bonificador paga la 1ª factura de cada caja que cierra hasta el 31-dic-2027: 100% la 1ª, 120% la 2ª, 140% la 3ª y 100% de la 4ª en adelante. Se cobra en el mes 2 de la caja y no está en 3a1.";
+  $("plN").textContent="Cifras del motor beta1.1. La comisión (10%) va en el año de su factura y se paga un mes después; la caja con bono no cobra la comisión de su mes 1. El bonificador paga la 1ª factura de cada caja que cierra hasta el 31-dic-2027: 100% la 1ª, 120% la 2ª, 140% la 3ª y 100% de la 4ª en adelante. Se cobra en el mes 2 de la caja. La cifra grande y el Año 1 de la proyección incluyen el bonificador.";
 }
 
 /* ---------- RENDER ---------- */
@@ -1745,11 +1745,11 @@ function render(){
     if(R.errores&&R.errores.length){toast(R.errores[0]);return}
   }
   var yr=[0,0,0,0,0], tot=0, pe=[], ER=null;
-  if(R){R.por_anio_de_vida.forEach(function(v,i){if(i<5)yr[i]=v.comision});tot=R.totales.renta;pe=R.por_empresa;ER=R.estado_resultados}
+  if(R){ER=R.estado_resultados;ER.filas.forEach(function(f,i){if(i<5)yr[i]=f.ingreso});tot=ER.totales.ingreso;pe=R.por_empresa}
   var mxy=Math.max.apply(null,yr.concat([1]));
   $("cEmp").textContent=list.length+" de "+MAX+" empresas";
   $("vTot").textContent=fmt(tot);
-  $("yrs").innerHTML=yr.map(function(v,i){return '<div class="yr"><span class="a">Año '+(i+1)+'</span><div class="tk"><i style="width:'+(100*v/mxy).toFixed(1)+'%"></i></div><span class="g">'+(i&&yr[i-1]>0?'+'+Math.round(100*(v/yr[i-1]-1))+'%':'')+'</span><span class="m">'+fmt(v)+'</span></div>'}).join("");
+  $("yrs").innerHTML=yr.map(function(v,i){return '<div class="yr"><span class="a">Año '+(i+1)+'</span><div class="tk"><i style="width:'+(100*v/mxy).toFixed(1)+'%"></i></div><span class="g">'+(i&&yr[i-1]>0?(function(g){return (g>0?'+':'')+g+'%'})(Math.round(100*(v/yr[i-1]-1))):'')+'</span><span class="m">'+fmt(v)+'</span></div>'}).join("");
   plRender(ER);
   /* 3a3a · cifras clave (motor beta1.0) */
   var sel=$("selCaja"), op='<option value="">Todas las empresas</option>';
